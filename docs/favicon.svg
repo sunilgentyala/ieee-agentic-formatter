@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="7" fill="#0b0f14"/>
+  <!-- Document body -->
+  <rect x="6" y="4" width="14" height="18" rx="2" fill="#151b23" stroke="#4fd1c5" stroke-width="1.2"/>
+  <!-- Two columns -->
+  <rect x="8" y="8" width="4" height="1.4" rx="0.5" fill="#4fd1c5"/>
+  <rect x="14" y="8" width="4" height="1.4" rx="0.5" fill="#4fd1c5"/>
+  <rect x="8" y="11" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <rect x="14" y="11" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <rect x="8" y="13" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <rect x="14" y="13" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <rect x="8" y="15" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <rect x="14" y="15" width="4" height="1" rx="0.5" fill="#9aa7b4"/>
+  <!-- AI spark -->
+  <circle cx="22" cy="22" r="7" fill="#4fd1c5"/>
+  <text x="22" y="26" text-anchor="middle" font-size="8" font-family="Arial" font-weight="bold" fill="#07211f">AI</text>
+</svg>

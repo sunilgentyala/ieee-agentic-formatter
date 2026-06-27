@@ -1,9 +1,10 @@
 """Streamlit interface for the IEEE Agentic Formatter."""
 
 import os
-from io import StringIO
+from io import BytesIO, StringIO
 
 import streamlit as st
+from docx import Document as DocxDocument
 from dotenv import load_dotenv
 
 from agent.text_parser import parse_raw_text
@@ -36,7 +37,7 @@ with st.sidebar:
     st.markdown(
         "**Model:** `claude-opus-4-8`\n\n"
         "**Output:** IEEE 2-column, Letter size, Times New Roman\n\n"
-        "Powered by Claude + python-docx"
+        "Powered by Sunil Gentyala + python-docx"
     )
 
 # --- Input tabs ---
@@ -58,12 +59,16 @@ with tab_text:
 
 with tab_file:
     uploaded = st.file_uploader(
-        "Upload a .txt or .md file",
-        type=["txt", "md"],
-        help="Plain text or Markdown files up to 200 KB.",
+        "Upload a .txt, .md, or .docx file",
+        type=["txt", "md", "docx"],
+        help="Plain text, Markdown, or Word (.docx) files up to 200 KB.",
     )
     if uploaded is not None:
-        file_text = StringIO(uploaded.read().decode("utf-8", errors="ignore")).read()
+        if uploaded.name.lower().endswith(".docx"):
+            doc = DocxDocument(BytesIO(uploaded.read()))
+            file_text = "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        else:
+            file_text = StringIO(uploaded.read().decode("utf-8", errors="ignore")).read()
         st.text_area("File preview", value=file_text[:3000], height=300, disabled=True)
         raw_text = file_text
 

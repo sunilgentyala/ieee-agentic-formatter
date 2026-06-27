@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEEE Agentic Formatter | AI-Powered IEEE Paper Generator</title>
+<meta name="description" content="Transform raw research notes, drafts, or Markdown into a strictly compliant, two-column IEEE Conference Paper (.docx) using Claude AI and python-docx.">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --bg-alt: #11161d;
+    --card: #151b23;
+    --border: #232b35;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #4fd1c5;
+    --accent-2: #7c9eff;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  header.hero {
+    padding: 90px 0 60px;
+    background: radial-gradient(circle at 20% 20%, rgba(79,209,197,0.12), transparent 45%),
+                radial-gradient(circle at 80% 0%, rgba(124,158,255,0.12), transparent 40%);
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(79,209,197,0.4);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 2.6rem; margin: 0 0 14px; line-height: 1.15; }
+  h1 span { color: var(--accent); }
+  .lede { font-size: 1.15rem; color: var(--muted); max-width: 700px; margin: 0 0 30px; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .btn-primary { background: var(--accent); color: #07211f; }
+  .btn-primary:hover { background: #6fe0d5; text-decoration: none; }
+  .btn-secondary { border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); text-decoration: none; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  h2 { font-size: 1.6rem; margin: 0 0 10px; }
+  .section-sub { color: var(--muted); margin: 0 0 30px; max-width: 680px; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 1.9rem; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 1.02rem; color: var(--text); }
+  .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+  .card .icon { font-size: 1.5rem; margin-bottom: 10px; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: steps; }
+  .steps li {
+    counter-increment: steps;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 18px 16px 56px;
+    color: var(--muted);
+    position: relative;
+  }
+  .steps li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #07211f;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps li strong { color: var(--text); display: block; margin-bottom: 3px; }
+
+  pre {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    color: #c8d3dd;
+  }
+  code {
+    background: rgba(124,158,255,0.12);
+    color: var(--accent-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  .spec-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .spec-table th, .spec-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .spec-table th { color: var(--accent); font-weight: 600; }
+  .spec-table td { color: var(--muted); }
+  .spec-table td:first-child { color: var(--text); font-weight: 500; }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .badge-teal { background: rgba(79,209,197,0.15); color: var(--accent); border: 1px solid rgba(79,209,197,0.3); }
+  .badge-blue { background: rgba(124,158,255,0.15); color: var(--accent-2); border: 1px solid rgba(124,158,255,0.3); }
+
+  footer { padding: 40px 0 60px; color: var(--muted); font-size: 0.85rem; }
+  footer a { color: var(--muted); }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Agentic AI Tool</div>
+    <h1>IEEE <span>Agentic</span> Formatter</h1>
+    <p class="lede">
+      Transform raw research notes, loose drafts, or Markdown files into a strictly
+      compliant, two-column IEEE Conference Paper (.docx) in seconds -- powered by
+      Claude AI and python-docx.
+    </p>
+    <div class="btn-row">
+      <a href="https://github.com/sunilgentyala/ieee-agentic-formatter" class="btn btn-primary">GitHub Repository</a>
+      <a href="#quickstart" class="btn btn-secondary">Quick Start</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- What it does -->
+  <section>
+    <div class="wrap">
+      <h2>What it does</h2>
+      <p class="section-sub">
+        One pipeline from unstructured text to publication-ready IEEE paper.
+        No manual formatting. No template wrestling.
+      </p>
+      <div class="grid">
+        <div class="card">
+          <div class="icon">&#129504;</div>
+          <h3>Agentic Parsing</h3>
+          <p>Claude (<code>claude-opus-4-8</code>) with adaptive thinking and forced tool use
+          extracts title, authors, abstract, keywords, sections, and references from any raw input.</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#128196;</div>
+          <h3>Strict IEEE Layout</h3>
+          <p>Letter-size, mirrored margins, single-column title block, continuous-break into
+          two justified columns, Times New Roman typography, Roman-numeral headings.</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#128196;</div>
+          <h3>Multi-format Input</h3>
+          <p>Paste raw text, upload a <code>.txt</code>, <code>.md</code>, or <code>.docx</code>
+          file. The agent infers and fills any missing sections from context.</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#11015;&#65039;</div>
+          <h3>One-click Download</h3>
+          <p>Generates an in-memory <code>.docx</code> via python-docx and delivers it as a
+          browser download -- no temp files, no cloud storage.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IEEE Formatting spec -->
+  <section>
+    <div class="wrap">
+      <h2>IEEE Formatting Specification</h2>
+      <p class="section-sub">Every output is validated against these constraints before download.</p>
+      <table class="spec-table">
+        <tr><th>Property</th><th>Value</th></tr>
+        <tr><td>Page size</td><td>Letter (8.5 x 11 in)</td></tr>
+        <tr><td>Margins</td><td>1 in all sides, mirrored (odd/even pages)</td></tr>
+        <tr><td>Title font</td><td>Times New Roman 24 pt, centered</td></tr>
+        <tr><td>Author block</td><td>Times New Roman 10 pt (name) / 10 pt italic (affiliation)</td></tr>
+        <tr><td>Abstract / Keywords</td><td>Times New Roman 9 pt bold-italic label + 9 pt italic body</td></tr>
+        <tr><td>Body columns</td><td>2 equal columns, 0.32 in gap, continuous section break</td></tr>
+        <tr><td>Body font</td><td>Times New Roman 10 pt, justified, 0.15 in first-line indent, 12 pt exact leading</td></tr>
+        <tr><td>Section headings</td><td>Level 1: Roman numeral (I. INTRODUCTION) centered bold; Level 2: Letter (A. Background) left italic</td></tr>
+        <tr><td>References</td><td>Times New Roman 8 pt, hanging indent, IEEE bracket style</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- Quick start -->
+  <section id="quickstart">
+    <div class="wrap">
+      <h2>Quick Start</h2>
+      <p class="section-sub">Up and running in under two minutes.</p>
+      <ol class="steps">
+        <li>
+          <strong>Clone and install</strong>
+          <code>git clone https://github.com/sunilgentyala/ieee-agentic-formatter.git &amp;&amp; pip install -r requirements.txt</code>
+        </li>
+        <li>
+          <strong>Add your API key</strong>
+          Create a <code>.env</code> file: <code>ANTHROPIC_API_KEY=sk-ant-...</code>
+        </li>
+        <li>
+          <strong>Launch the app</strong>
+          <code>streamlit run app.py</code>
+        </li>
+        <li>
+          <strong>Paste or upload your content and click Generate</strong>
+          Download the IEEE-compliant <code>.docx</code> instantly.
+        </li>
+      </ol>
+
+      <br>
+      <pre><code># Clone
+git clone https://github.com/sunilgentyala/ieee-agentic-formatter.git
+cd ieee-agentic-formatter
+
+# Install
+pip install -r requirements.txt
+
+# Configure
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
+
+# Run
+streamlit run app.py</code></pre>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section>
+    <div class="wrap">
+      <h2>Architecture</h2>
+      <p class="section-sub">Three clean modules, zero circular dependencies.</p>
+      <div class="grid">
+        <div class="card">
+          <h3><span class="badge badge-blue">agent/</span></h3>
+          <p>
+            <code>models.py</code> -- Pydantic v2 data models (<code>IEEEPaper</code>, <code>Author</code>, <code>Section</code>).<br><br>
+            <code>text_parser.py</code> -- Anthropic streaming API with <code>tool_choice</code> forced to
+            <code>structure_ieee_paper</code>. Adaptive thinking enabled for complex inputs.
+          </p>
+        </div>
+        <div class="card">
+          <h3><span class="badge badge-teal">formatter/</span></h3>
+          <p>
+            <code>docx_engine.py</code> -- python-docx + raw OOXML (<code>OxmlElement</code>) to inject
+            <code>w:mirrorMargins</code>, two-column <code>w:cols</code>, and exact-leading paragraph
+            spacing without a Word template dependency.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stack -->
+  <section>
+    <div class="wrap">
+      <h2>Stack</h2>
+      <p class="section-sub"></p>
+      <div class="grid">
+        <div class="card"><h3>Claude claude-opus-4-8</h3><p>Anthropic's most capable model with adaptive thinking and structured tool-use output.</p></div>
+        <div class="card"><h3>python-docx + OOXML</h3><p>Fine-grained Word document control via both the high-level API and raw XML injection.</p></div>
+        <div class="card"><h3>Pydantic v2</h3><p>Schema-validated structured output ensures the formatter always receives well-formed data.</p></div>
+        <div class="card"><h3>Streamlit</h3><p>Minimal, fast UI for text input, file upload, and in-browser .docx download.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <span>Built by <a href="https://github.com/sunilgentyala" target="_blank">Sunil Gentyala</a> &nbsp;|&nbsp; Powered by Sunil Gentyala + python-docx</span>
+      <span><a href="https://github.com/sunilgentyala/ieee-agentic-formatter" target="_blank">github.com/sunilgentyala/ieee-agentic-formatter</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
