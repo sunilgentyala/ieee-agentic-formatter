@@ -166,15 +166,16 @@
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow">Agentic AI Tool</div>
+    <div class="eyebrow">Agentic AI Tool &nbsp;&#183;&nbsp; v1.1.0</div>
     <h1>IEEE <span>Agentic</span> Formatter</h1>
     <p class="lede">
       Transform raw research notes, loose drafts, or Markdown files into a strictly
-      compliant, two-column IEEE Conference Paper (.docx) in seconds -- powered by
-      Claude AI and python-docx.
+      compliant, two-column IEEE Conference Paper (.docx) in seconds.
+      Runs fully <strong style="color:var(--accent)">offline with local Ollama</strong> — no API key required.
     </p>
     <div class="btn-row">
       <a href="https://github.com/sunilgentyala/ieee-agentic-formatter" class="btn btn-primary">GitHub Repository</a>
+      <a href="#local" class="btn btn-secondary">Local Mode</a>
       <a href="#quickstart" class="btn btn-secondary">Quick Start</a>
     </div>
   </div>
@@ -191,10 +192,16 @@
       </p>
       <div class="grid">
         <div class="card">
+          <div class="icon">&#127968;</div>
+          <h3>Local Mode — No API Key</h3>
+          <p>Runs fully offline via <strong>Ollama</strong> (<code>qwen2.5:7b</code>, <code>llama3</code>, <code>mistral</code>).
+          Zero cost, zero data sent to the cloud. Select <em>Local (Ollama)</em> in the sidebar.</p>
+        </div>
+        <div class="card">
           <div class="icon">&#129504;</div>
-          <h3>Agentic Parsing</h3>
-          <p>Claude (<code>claude-opus-4-8</code>) with adaptive thinking and forced tool use
-          extracts title, authors, abstract, keywords, sections, and references from any raw input.</p>
+          <h3>Cloud Mode — Claude AI</h3>
+          <p><code>claude-opus-4-8</code> with adaptive thinking and forced tool use for
+          highest-quality extraction from complex or ambiguous inputs.</p>
         </div>
         <div class="card">
           <div class="icon">&#128196;</div>
@@ -205,14 +212,8 @@
         <div class="card">
           <div class="icon">&#128196;</div>
           <h3>Multi-format Input</h3>
-          <p>Paste raw text, upload a <code>.txt</code>, <code>.md</code>, or <code>.docx</code>
-          file. The agent infers and fills any missing sections from context.</p>
-        </div>
-        <div class="card">
-          <div class="icon">&#11015;&#65039;</div>
-          <h3>One-click Download</h3>
-          <p>Generates an in-memory <code>.docx</code> via python-docx and delivers it as a
-          browser download -- no temp files, no cloud storage.</p>
+          <p>Paste raw text or upload a <code>.txt</code>, <code>.md</code>, or <code>.docx</code>
+          file. The AI infers and fills missing sections from context.</p>
         </div>
       </div>
     </div>
@@ -238,11 +239,44 @@
     </div>
   </section>
 
-  <!-- Quick start -->
+  <!-- Local mode -->
+  <section id="local">
+    <div class="wrap">
+      <h2>Local Mode <span style="font-size:1rem;color:var(--accent);font-weight:400">(No API Key Required)</span></h2>
+      <p class="section-sub">Run entirely on your machine — free, private, offline.</p>
+      <ol class="steps">
+        <li>
+          <strong>Install Ollama</strong>
+          Download from <a href="https://ollama.com" target="_blank">ollama.com</a> and start it.
+        </li>
+        <li>
+          <strong>Pull a model</strong>
+          <code>ollama pull qwen2.5:7b</code> &nbsp;(recommended) &nbsp;or&nbsp; <code>ollama pull llama3</code>
+        </li>
+        <li>
+          <strong>Clone and install</strong>
+          <code>git clone https://github.com/sunilgentyala/ieee-agentic-formatter.git &amp;&amp; pip install -r requirements.txt</code>
+        </li>
+        <li>
+          <strong>Run — no .env needed</strong>
+          <code>streamlit run app.py</code> &mdash; sidebar defaults to <em>Local (Ollama)</em>
+        </li>
+      </ol>
+      <br>
+      <pre><code>ollama pull qwen2.5:7b
+git clone https://github.com/sunilgentyala/ieee-agentic-formatter.git
+cd ieee-agentic-formatter
+pip install -r requirements.txt
+streamlit run app.py
+# Open http://localhost:8501 — Local (Ollama) is selected by default</code></pre>
+    </div>
+  </section>
+
+  <!-- Quick start (cloud) -->
   <section id="quickstart">
     <div class="wrap">
-      <h2>Quick Start</h2>
-      <p class="section-sub">Up and running in under two minutes.</p>
+      <h2>Cloud Mode <span style="font-size:1rem;color:var(--accent-2);font-weight:400">(Anthropic API)</span></h2>
+      <p class="section-sub">Highest quality for complex inputs — requires an Anthropic API key.</p>
       <ol class="steps">
         <li>
           <strong>Clone and install</strong>
@@ -250,31 +284,17 @@
         </li>
         <li>
           <strong>Add your API key</strong>
-          Create a <code>.env</code> file: <code>ANTHROPIC_API_KEY=sk-ant-...</code>
+          <code>echo "ANTHROPIC_API_KEY=sk-ant-..." &gt; .env</code>
         </li>
         <li>
-          <strong>Launch the app</strong>
-          <code>streamlit run app.py</code>
+          <strong>Run and switch backend</strong>
+          <code>streamlit run app.py</code> &mdash; select <em>Anthropic API</em> in the sidebar
         </li>
         <li>
-          <strong>Paste or upload your content and click Generate</strong>
+          <strong>Paste or upload content and click Generate</strong>
           Download the IEEE-compliant <code>.docx</code> instantly.
         </li>
       </ol>
-
-      <br>
-      <pre><code># Clone
-git clone https://github.com/sunilgentyala/ieee-agentic-formatter.git
-cd ieee-agentic-formatter
-
-# Install
-pip install -r requirements.txt
-
-# Configure
-echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
-
-# Run
-streamlit run app.py</code></pre>
     </div>
   </section>
 
@@ -288,8 +308,9 @@ streamlit run app.py</code></pre>
           <h3><span class="badge badge-blue">agent/</span></h3>
           <p>
             <code>models.py</code> -- Pydantic v2 data models (<code>IEEEPaper</code>, <code>Author</code>, <code>Section</code>).<br><br>
-            <code>text_parser.py</code> -- Anthropic streaming API with <code>tool_choice</code> forced to
-            <code>structure_ieee_paper</code>. Adaptive thinking enabled for complex inputs.
+            <code>text_parser.py</code> -- <strong>Two backends:</strong><br>
+            &bull; <code>parse_raw_text()</code>: Anthropic streaming + forced <code>tool_choice</code><br>
+            &bull; <code>parse_raw_text_local()</code>: Ollama OpenAI-compat endpoint + JSON-schema prompting
           </p>
         </div>
         <div class="card">
@@ -310,10 +331,10 @@ streamlit run app.py</code></pre>
       <h2>Stack</h2>
       <p class="section-sub"></p>
       <div class="grid">
+        <div class="card"><h3>Ollama (Local)</h3><p><code>qwen2.5:7b</code>, <code>llama3</code>, <code>mistral</code> via OpenAI-compatible endpoint. Fully offline, zero cost.</p></div>
         <div class="card"><h3>Claude claude-opus-4-8</h3><p>Anthropic's most capable model with adaptive thinking and structured tool-use output.</p></div>
         <div class="card"><h3>python-docx + OOXML</h3><p>Fine-grained Word document control via both the high-level API and raw XML injection.</p></div>
         <div class="card"><h3>Pydantic v2</h3><p>Schema-validated structured output ensures the formatter always receives well-formed data.</p></div>
-        <div class="card"><h3>Streamlit</h3><p>Minimal, fast UI for text input, file upload, and in-browser .docx download.</p></div>
       </div>
     </div>
   </section>
