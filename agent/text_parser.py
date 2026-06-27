@@ -1,15 +1,19 @@
-"""LLM-powered parser that extracts IEEE paper structure from raw text."""
+"""LLM-powered parser — supports Anthropic API and local Ollama backends."""
 
 import json
 import os
+import re
 from typing import Optional
 
-import anthropic
 from dotenv import load_dotenv
 
 from .models import Author, IEEEPaper, Section
 
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Shared schema / prompts
+# ---------------------------------------------------------------------------
 
 _IEEE_TOOL = {
     "name": "structure_ieee_paper",
@@ -80,7 +84,7 @@ _IEEE_TOOL = {
     },
 }
 
-_SYSTEM_PROMPT = (
+_ANTHROPIC_SYSTEM = (
     "You are an expert IEEE conference paper editor. "
     "When given raw text, research notes, or poorly formatted content, you extract "
     "and infer the complete paper structure. You MUST call the structure_ieee_paper "
@@ -88,42 +92,31 @@ _SYSTEM_PROMPT = (
     "leave required fields empty. Produce publication-ready academic prose."
 )
 
+_LOCAL_SYSTEM = """You are an expert IEEE conference paper editor.
+Extract and structure the given content into a complete IEEE conference paper.
+Infer missing fields from context. Never leave required fields empty.
 
-def parse_raw_text(raw_text: str, client: Optional[anthropic.Anthropic] = None) -> IEEEPaper:
-    """Parse raw text or research notes into a validated IEEEPaper using Claude."""
-    if client is None:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set. Add it to .env or pass a client.")
-        client = anthropic.Anthropic(api_key=api_key)
+Respond with ONLY a valid JSON object — no markdown fences, no explanation — matching this schema exactly:
+{
+  "title": "string",
+  "authors": [{"name": "string", "affiliation": "string", "email": "string"}],
+  "abstract": "string (150-250 words, no label)",
+  "keywords": ["string", ...],
+  "sections": [
+    {"heading": "string (no number prefix)", "level": 1, "content": "string (paragraphs separated by \\n\\n)"},
+    ...
+  ],
+  "references": ["IEEE-formatted string", ...]
+}
+level 1 = main section (Roman numeral heading), level 2 = subsection (letter heading).
+Typical section order: Introduction, Related Work, Methodology/System Design, Results/Evaluation, Conclusion."""
 
-    with client.messages.stream(
-        model="claude-opus-4-8",
-        max_tokens=8192,
-        thinking={"type": "adaptive"},
-        system=_SYSTEM_PROMPT,
-        tools=[_IEEE_TOOL],
-        tool_choice={"type": "tool", "name": "structure_ieee_paper"},
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    "Structure the following content as a complete IEEE conference paper:\n\n"
-                    + raw_text
-                ),
-            }
-        ],
-    ) as stream:
-        response = stream.get_final_message()
 
-    tool_use_block = next(
-        (b for b in response.content if b.type == "tool_use"), None
-    )
-    if tool_use_block is None:
-        raise RuntimeError("Claude did not return a tool_use block. Response: " + str(response))
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    data = tool_use_block.input
-
+def _build_paper(data: dict) -> IEEEPaper:
     authors = [
         Author(
             name=a["name"],
@@ -140,7 +133,6 @@ def parse_raw_text(raw_text: str, client: Optional[anthropic.Anthropic] = None) 
         )
         for s in data["sections"]
     ]
-
     return IEEEPaper(
         title=data["title"],
         authors=authors,
@@ -149,3 +141,100 @@ def parse_raw_text(raw_text: str, client: Optional[anthropic.Anthropic] = None) 
         sections=sections,
         references=data["references"],
     )
+
+
+def _extract_json(text: str) -> dict:
+    """Strip markdown fences and parse the first JSON object found."""
+    text = re.sub(r"^```(?:json)?\s*", "", text.strip(), flags=re.IGNORECASE)
+    text = re.sub(r"\s*```$", "", text.strip())
+    # Find the outermost JSON object
+    start = text.find("{")
+    if start == -1:
+        raise ValueError("No JSON object found in model response.")
+    depth = 0
+    for i, ch in enumerate(text[start:], start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return json.loads(text[start : i + 1])
+    raise ValueError("Malformed JSON in model response.")
+
+
+# ---------------------------------------------------------------------------
+# Anthropic backend
+# ---------------------------------------------------------------------------
+
+def parse_raw_text(raw_text: str, client=None) -> IEEEPaper:
+    """Parse via Anthropic claude-opus-4-8 with forced tool use."""
+    import anthropic as _anthropic
+
+    if client is None:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY not set. Use local mode or add key to .env.")
+        client = _anthropic.Anthropic(api_key=api_key)
+
+    with client.messages.stream(
+        model="claude-opus-4-8",
+        max_tokens=8192,
+        thinking={"type": "adaptive"},
+        system=_ANTHROPIC_SYSTEM,
+        tools=[_IEEE_TOOL],
+        tool_choice={"type": "tool", "name": "structure_ieee_paper"},
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Structure the following content as a complete IEEE conference paper:\n\n"
+                    + raw_text
+                ),
+            }
+        ],
+    ) as stream:
+        response = stream.get_final_message()
+
+    tool_block = next((b for b in response.content if b.type == "tool_use"), None)
+    if tool_block is None:
+        raise RuntimeError("Claude did not return a tool_use block.")
+
+    return _build_paper(tool_block.input)
+
+
+# ---------------------------------------------------------------------------
+# Local Ollama backend
+# ---------------------------------------------------------------------------
+
+def parse_raw_text_local(
+    raw_text: str,
+    model: str = "qwen2.5:7b",
+    ollama_url: str = "http://localhost:11434",
+) -> IEEEPaper:
+    """Parse via a local Ollama model using JSON-mode prompting."""
+    try:
+        from openai import OpenAI
+    except ImportError:
+        raise ImportError("Run: pip install openai  (needed for Ollama's OpenAI-compatible API)")
+
+    client = OpenAI(base_url=f"{ollama_url}/v1", api_key="ollama")
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": _LOCAL_SYSTEM},
+            {
+                "role": "user",
+                "content": (
+                    "Structure the following content as a complete IEEE conference paper "
+                    "and return ONLY the JSON object:\n\n" + raw_text
+                ),
+            },
+        ],
+        temperature=0.2,
+        max_tokens=6000,
+    )
+
+    raw_json = response.choices[0].message.content
+    data = _extract_json(raw_json)
+    return _build_paper(data)

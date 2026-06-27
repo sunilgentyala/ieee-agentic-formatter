@@ -7,7 +7,7 @@ import streamlit as st
 from docx import Document as DocxDocument
 from dotenv import load_dotenv
 
-from agent.text_parser import parse_raw_text
+from agent.text_parser import parse_raw_text, parse_raw_text_local
 from formatter.docx_engine import generate_ieee_docx
 
 load_dotenv()
@@ -20,25 +20,57 @@ st.set_page_config(
 
 st.title("IEEE Agentic Formatter")
 st.caption(
-    "Upload raw text, research notes, or a Markdown file and receive a "
+    "Upload raw text, research notes, or a file and receive a "
     "strictly compliant IEEE conference paper in .docx format."
 )
 
 # --- Sidebar ---
 with st.sidebar:
     st.header("Configuration")
-    api_key_input = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        value=os.getenv("ANTHROPIC_API_KEY", ""),
-        help="Required if ANTHROPIC_API_KEY is not set in your .env file.",
+
+    backend = st.radio(
+        "Backend",
+        ["Local (Ollama)", "Anthropic API"],
+        index=0,
+        help="Local uses Ollama — no API key needed. Anthropic uses claude-opus-4-8.",
     )
+
+    if backend == "Anthropic API":
+        api_key_input = st.text_input(
+            "Anthropic API Key",
+            type="password",
+            value=os.getenv("ANTHROPIC_API_KEY", ""),
+            help="Required. Get yours at console.anthropic.com",
+        )
+    else:
+        api_key_input = ""
+        ollama_url = st.text_input(
+            "Ollama URL",
+            value="http://localhost:11434",
+            help="Default Ollama address.",
+        )
+        local_model = st.selectbox(
+            "Local Model",
+            ["qwen2.5:7b", "llama3:latest", "mistral:latest"],
+            index=0,
+            help="qwen2.5:7b gives the best structured JSON output.",
+        )
+
     st.divider()
-    st.markdown(
-        "**Model:** `claude-opus-4-8`\n\n"
-        "**Output:** IEEE 2-column, Letter size, Times New Roman\n\n"
-        "Powered by Sunil Gentyala + python-docx"
-    )
+    if backend == "Local (Ollama)":
+        st.markdown(
+            "**Mode:** Local (no API key)\n\n"
+            f"**Model:** `{local_model}`\n\n"
+            "**Output:** IEEE 2-column, Letter size, Times New Roman\n\n"
+            "Powered by Sunil Gentyala + python-docx"
+        )
+    else:
+        st.markdown(
+            "**Mode:** Anthropic API\n\n"
+            "**Model:** `claude-opus-4-8`\n\n"
+            "**Output:** IEEE 2-column, Letter size, Times New Roman\n\n"
+            "Powered by Sunil Gentyala + python-docx"
+        )
 
 # --- Input tabs ---
 tab_text, tab_file = st.tabs(["Paste Text", "Upload File"])
@@ -51,7 +83,7 @@ with tab_text:
         height=400,
         placeholder=(
             "Research notes, a draft abstract, bullet points, loose paragraphs "
-            "— anything. Claude will structure it into a full IEEE paper."
+            "-- anything. The AI will structure it into a full IEEE paper."
         ),
     )
     if raw_text_input:
@@ -77,20 +109,30 @@ st.divider()
 generate_btn = st.button("Generate IEEE Paper", type="primary", disabled=not raw_text.strip())
 
 if generate_btn and raw_text.strip():
-    effective_key = api_key_input.strip() or os.getenv("ANTHROPIC_API_KEY", "")
-    if not effective_key:
-        st.error("Please provide an Anthropic API key in the sidebar or in your .env file.")
-        st.stop()
 
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=effective_key)
+    # --- Validate config ---
+    if backend == "Anthropic API":
+        effective_key = api_key_input.strip() or os.getenv("ANTHROPIC_API_KEY", "")
+        if not effective_key:
+            st.error("Please provide an Anthropic API key in the sidebar or in your .env file.")
+            st.stop()
 
     col1, col2 = st.columns(2)
 
-    with st.spinner("Step 1/2 — Claude is parsing and structuring your content..."):
+    # --- Step 1: Parse ---
+    model_label = local_model if backend == "Local (Ollama)" else "claude-opus-4-8"
+    with st.spinner(f"Step 1/2 — Parsing with {model_label}..."):
         try:
-            paper = parse_raw_text(raw_text, client=client)
+            if backend == "Local (Ollama)":
+                paper = parse_raw_text_local(
+                    raw_text,
+                    model=local_model,
+                    ollama_url=ollama_url,
+                )
+            else:
+                import anthropic
+                client = anthropic.Anthropic(api_key=effective_key)
+                paper = parse_raw_text(raw_text, client=client)
         except Exception as exc:
             st.error(f"Parsing failed: {exc}")
             st.stop()
@@ -104,6 +146,7 @@ if generate_btn and raw_text.strip():
         st.markdown(f"**Sections:** {len(paper.sections)}")
         st.markdown(f"**References:** {len(paper.references)}")
 
+    # --- Step 2: Format ---
     with st.spinner("Step 2/2 — Generating IEEE .docx..."):
         try:
             docx_bytes = generate_ieee_docx(paper)
