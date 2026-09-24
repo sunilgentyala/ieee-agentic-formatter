@@ -186,7 +186,7 @@ federated learning, and quantum-safe protocols — with 8+ accepted IEEE publica
 
 [![IEEE](https://img.shields.io/badge/IEEE-sunil.gentyala%40ieee.org-00629B?style=flat-square&logo=ieee&logoColor=white)](mailto:sunil.gentyala@ieee.org)
 [![GitHub](https://img.shields.io/badge/GitHub-sunilgentyala-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/sunilgentyala)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Sunil%20Gentyala-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/sunilgentyala)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Sunil%20Gentyala-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/sunil-gentyala)
 
 </div>
 
