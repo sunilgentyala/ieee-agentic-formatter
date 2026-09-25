@@ -208,6 +208,24 @@ federated learning, and quantum-safe protocols — with 8+ accepted IEEE publica
 
 ---
 
+## How to Cite
+
+If you use ieee-agentic-formatter in your research, please cite the software:
+
+```bibtex
+@software{gentyala2026ieeeformatter,
+  author    = {Gentyala, Sunil},
+  title     = {ieee-agentic-formatter},
+  year      = {2026},
+  version   = {1.1.0},
+  url       = {https://github.com/sunilgentyala/ieee-agentic-formatter}
+}
+```
+
+Machine-readable metadata is in [`CITATION.cff`](CITATION.cff); GitHub shows it under "Cite this repository".
+
+---
+
 ## License
 
 MIT &copy; 2026 Sunil Gentyala

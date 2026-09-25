@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: If you use this software in your research, please cite it as below.
+type: software
+title: ieee-agentic-formatter
+version: 1.1.0
+date-released: '2026-06-27'
+authors:
+- family-names: Gentyala
+  given-names: Sunil
+  affiliation: HCLTech (HCL America Inc.), Dallas, TX, USA
+  orcid: https://orcid.org/0009-0005-2642-3479
+  email: sunil.gentyala@ieee.org
+repository-code: https://github.com/sunilgentyala/ieee-agentic-formatter
+license: MIT
+abstract: 'Agentic AI tool: transforms raw text/notes into a strictly compliant IEEE Conference
+  Paper (.docx) using Claude AI and python-docx'
+keywords:
+- academic-writing
+- ai-agent
+- claude-ai
+- document-automation
+- ieee
+- python
+- python-docx
